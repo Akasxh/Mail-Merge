@@ -11,6 +11,50 @@ This project allows you to send automated emails using data from a Google Sheet,
 
 ---
 
+## Google Sheet with Generated Text
+
+The first image shows the Google Sheet with the following columns:
+
+1. **Column A**: Recipient's Name
+2. **Column B**: Recipient's Email
+3. **Column C**: Email Topic
+4. **Column D**: Generated Data/Message (generated dynamically from the Gemini API using the **Topic**)
+
+### Google Sheet Example:
+![Google Sheet Example](image/gsheet.png)
+
+The **Topic** column is used to generate the message content in the **Data** column, which is then sent to each recipient as the email body.
+
+---
+
+## Email Sent Using the Script
+
+The second image shows the screenshot of the email sent using the Gmail API, where each email is personalized with the recipient's name and topic.
+
+### Sent Email Screenshot:
+![Sent Email](image/email_sent_message.png)
+
+---
+
+## Received Email in the Inbox
+
+Finally, the third image shows the email as it appears in the recipient's inbox, demonstrating the successful delivery of the automated email.
+
+### Received Email Screenshot:
+![Received Email](image/email_sent.png)
+
+---
+
+These images illustrate the complete flow, from generating dynamic content using Gemini to sending personalized emails and confirming their delivery in the recipient's inbox.
+
+---
+
+### Notes:
+- Make sure you have the proper Google Sheet structure as described in the **Example Google Sheet Structure** section.
+- Ensure that your **Gemini API** (or whichever API you’re using) is set up to generate appropriate messages based on the topic.
+
+---
+
 ## Prerequisites
 
 1. **Google Cloud Project**: You need to set up a Google Cloud project and enable the necessary APIs.
@@ -103,18 +147,12 @@ print("Token created and saved as token.pickle")
 For the generation part of project to work, I have chosen to use the free Gemini API. It passes on the topic and writes down the required message.
 You will be asked for your API key while running the script in collab.
 
-## Step 5: Mails sent
+## Step 5: Run the collab script
 
-There is DELAY variable which can be used for throtling purposes. The emails would be sent as per required.
+Multiple variables can be changed according to user such as: 
+- gemini generation prompt
+- body of the email script
+- delay for throttling
 
-## Example Google Sheet Structure
-
-The Google Sheet should have the following columns:
-
-| Name          | Email                     | Topic         | 
-| ------------- | ------------------------- | ------------- | 
-| John Doe      | john.doe@example.com       | Meeting       |
-| Jane Smith    | jane.smith@example.com     | Deadline      | 
-| Alice Green   | alice.green@example.com    | Project Update|
 
 
