@@ -1,108 +1,120 @@
-# Send emails with the Gmail API for python
+# Automated Email Sender from Google Sheets Using Gmail API
 
-This repo provides a one-line python functionality to send the same email to a list of recipients using the [Gmail API](https://developers.google.com/gmail/api/guides). This readme provides step-by-step instructions on how to configure the files in this repo so that the email message is tailored to your needs. 
+This project allows you to send automated emails using data from a Google Sheet, where each row contains the recipient’s name, email, a topic, and message content. The script uses Gmail API and Google Sheets API, with the option to generate messages dynamically using Gemini (AI language model).
 
-This repo was tested on Mac Venture 13.1 (22C65) and Python 3.10.8.  
+### Features:
+1. **Automates sending emails** from a Google Sheet.
+2. **Fetches recipient data** from the sheet: name, email, topic, and message.
+3. **Generates dynamic email body** based on the topic (optional: using Gemini API).
+4. **Throttling**: Prevents hitting Gmail API limits by adding a delay between each email.
+5. **Token-based authentication** for Gmail and Google Sheets using `token.pickle` (no need to reauthenticate).
 
-There are four files in this repo that will need to be updated by the user:
+---
 
-* `credentials.json` (see (1))
-* `config.py` (see (3))
-* `emails/example1.txt` (see (4))
-* `attachments/file1.png` (see (5)) 
+## Prerequisites
 
-The ones found in this repo are meant for demonstrative purposes only. An example of the structure of this repo is shown below, when there are two attachments files (file1.png, file2.jpg) and two email lists (list1.txt, list2.txt):
+1. **Google Cloud Project**: You need to set up a Google Cloud project and enable the necessary APIs.
+2. **Google Sheets**: You must have a Google Sheet with the following structure:
+   - **Column A**: Name of the recipient.
+   - **Column B**: Recipient's email.
+   - **Column C**: Topic for the email.
+   - **Column D**: Data or message to be included in the email.
 
-```
-├── .gitignore
-├── README.md
-├── attachments
-│   ├── file1.png
-│   ├── file2.jpg
-│   └── readme.md
-├── config.py
-├── credentials.json
-├── emails
-│   ├── list1.txt
-│   ├── list2.txt
-│   └── readme.md
-├── environment.yml
-├── send_emails.py
-└── utils.py
-```
+---
 
-To sure you don't commit any private changes to your branch, you'll probably want to stop tracking the template files:
+## Step 1: Set Up Google Cloud Project and Enable APIs
 
-```
-git update-index --skip-worktree credentials.json
-git update-index --skip-worktree config.py
-git update-index --skip-worktree attachments/file1.png
-git update-index --skip-worktree attachments/file2.jpg
-git update-index --skip-worktree emails/list1.txt
-git update-index --skip-worktree emails/list2.txt
-```
+To interact with Gmail and Google Sheets, you'll need to set up a project on Google Cloud and enable the following APIs:
 
+1. **Google Sheets API**: Allows reading data from a Google Sheet.
+2. **Gmail API**: Allows sending emails via Gmail.
+3. **Gemini API**: (optional, if you want to generate messages dynamically based on the topic column).
 
-<br>
+### Steps to Enable APIs in Google Cloud Console:
 
-## (1) Configuring the gmail API
+1. **Create a New Google Cloud Project**:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/).
+   - Click on `Select Project` at the top, then `New Project`.
+   - Name your project and click `Create`.
 
-For a step-by-step guide on how to set up the gmail API see [this post](https://bioeconometrician.github.io/gmail_api/). 
+2. **Enable APIs**:
+   - **Google Sheets API**:
+     - Go to the [Google Sheets API page](https://console.developers.google.com/apis/library/sheets.googleapis.com).
+     - Click on `Enable`.
+   - **Gmail API**:
+     - Go to the [Gmail API page](https://console.developers.google.com/apis/library/gmail.googleapis.com).
+     - Click on `Enable`.
+   - **Gemini API** (Optional):
+     - If you want to generate messages using Gemini, you'll need to enable the Gemini API (or whichever language model service you're using).
+     - Go to the appropriate API page in Google Cloud and enable it.
 
-<br>
+3. **Create OAuth 2.0 Credentials**:
+   - Go to the [Credentials page](https://console.cloud.google.com/apis/credentials).
+   - Click `Create Credentials` > `OAuth 2.0 Client IDs`.
+   - Choose **Desktop App** as the application type.
+   - Download the `credentials.json` file when prompted. This will be needed for the initial authentication.
 
-## (2) Setting up conda environment
+4. **Download the `token.pickle` File**:
+   - Once the credentials are created and the APIs are enabled, you will need to authenticate using the `credentials.json` to generate a `token.pickle` file.
+   - The script will guide you through this process (the token is used for API access and avoids needing repeated logins).
 
-The python scripts in this repo call in packages that may not be installed on your environment. If you don't conda installed on your machine, [do so first](https://docs.conda.io/en/latest/miniconda.html), and then set up an environment that has been tested to work with this repo: `conda env create --file environment.yml`.
+---
 
-If the environment build doens't work (I find this often happens for different OS, particularly windows), you can manually re-create it yourself:
+## Step 2: Install Required Dependencies
 
-1. `conda create -n gmailAPI python=3.10`
-2. `conda activate gmailAPI`
-3. `conda install -c conda-forge numpy pandas opencv google-auth-oauthlib google-api-python-client`
+Before running the script, make sure you have the following dependencies installed:
 
-<br>
-
-## (3) Setting up the email parameters
-
-The contents of the email and subject line are controlled by the `config.py` script. The config script found in this repo contains empty strings so that different users/clones can have different set-ups. 
-
-1. `txt_message`: Put your main message here.
-2. `gmail_address`: Put your gmail address here.
-3. `subject_line`: Put your subject line here.
-4. There are four other parameters: `scopes`, `credentials`, `port`, and `max_emails`, but only adjust these if you know what you are doing.
-
-<br>
-
-## (4) Set up email list
-
-Users can add email lists in an unstructured format to the `emails` folder. For example, an `emails/emails1.txt` may look like:
-
-```
-jack@hotmail.com;    jazz@outlook.com
-
-jim@gmail.com
+```bash
+pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib gspread oauth2client google-colab google-auth
 ```
 
-Any spaces, semi-colons, or line-breaks will treated a possible separators. Angle brackets will be removed as well. For example `John Doe <john.doe@email.com>` will just become `john.doe@email.com`. For a "valid" email to be considered, it must contain an ampersand. Users can add as many *.txt files to this folder, and all emails will combined for the final list (e.g. emails/emails2.txt, ..., emails/moreemails.txt). 
+## Step 3: Get Token.pickle
 
-Remove the toy list1.txt and list2.txt files before sending your email.
-
-<br>
-
-## (5) Set up attachments (if any)
-
-Users can also include attachments in the email by dropping files in the `attachments` folder. If the attachment is an email, the maximum image size rule will kick in upon upload (see below). For example, of file1.png is a 1500x2000 image, and there is a max_image_size=1000, when the email will be shrunken by 50%.
-
-Remove the toy file1.png and file2.jpg files before sending your email.
-
-<br>
-
-## (6) Send emails
-
-After the `config.py` has been set up, email lists have been added to the `emails/*.txt` folder, and attachments (optional) have been added to the `attachment/*` folder, the main script can be run. An example of the script call can be found below. When running this from the user command line, a broswer window should open for authentication to give the app access to send emails from your gmail account. If it doesn't happen automatically, you can copy the link that will be printed to the console. Additionally, after the email list is printed out, users will need to confirm they want to go ahead with sending the email by typing "Y" into the console when prompted. If you type "n" the script will exit and no emails will send. If you type in anything else, you will be re-prompted to type in either "Y" or "n".
+Before working on the script make sure to generate the below python code on your local machine to generate a runnable server for authentication to work
 
 ```python
-conda activate gmailAPI
-python3 send_emails.py --attachment_suffix png jpg --email_suffix txt --max_image_size 1024
+pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib gspread oauth2client google-colab google-auth
+
+from google_auth_oauthlib.flow import InstalledAppFlow
+import os
+import pickle
+
+# Set the scope you need, e.g., for Gmail and Sheets
+SCOPES = [
+    'https://www.googleapis.com/auth/gmail.send',
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/drive'
+]
+
+# Load your credentials.json file
+flow = InstalledAppFlow.from_client_secrets_file(r'C:\Users\draka\Downloads\credentials.json', SCOPES)
+creds = flow.run_local_server(port=0)  # This will open a local browser for authentication
+
+# Save the credentials as a token.pickle file
+with open('token.pickle', 'wb') as token:
+    pickle.dump(creds, token)
+
+print("Token created and saved as token.pickle")
+
 ```
+
+## Step 4 : Generate your Gemini API key
+
+For the generation part of project to work, I have chosen to use the free Gemini API. It passes on the topic and writes down the required message.
+You will be asked for your API key while running the script in collab.
+
+## Step 5: Mails sent
+
+There is DELAY variable which can be used for throtling purposes. The emails would be sent as per required.
+
+## Example Google Sheet Structure
+
+The Google Sheet should have the following columns:
+
+| Name          | Email                     | Topic         | 
+| ------------- | ------------------------- | ------------- | 
+| John Doe      | john.doe@example.com       | Meeting       |
+| Jane Smith    | jane.smith@example.com     | Deadline      | 
+| Alice Green   | alice.green@example.com    | Project Update|
+
+
